@@ -1,0 +1,18 @@
+h2 { font-size:2em } 
+
+label, span, p, h2, h3 { color: #222222 }
+
+/* p { font-size:1.2em } */
+p { line-height:120%; margin-top:1em; }
+
+/* body {font-size: calc(12px * 1.2); } */
+body {font-size: 140%; }
+
+/*
+.nav-tabs{
+  display:inline-flex; 
+}
+
+.nav-tabs > li {
+  vertical-align: bottom;
+}*/
