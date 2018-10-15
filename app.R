@@ -4,7 +4,7 @@ load("data_translations.RData")
 source("include.R")
 
 #options(shiny.usecairo=FALSE)
-if (require(Cairo)) {
+if (suppressWarnings(require(Cairo))) {
   CairoFonts(
     regular="Roboto:style=Regular",
     bold="Roboto:style=Medium",
@@ -23,7 +23,9 @@ ui <- shinyUI(fluidPage(
     tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap.css"),
     tags$link(rel = "stylesheet", type = "text/css", href = "mine.css")
   ),
-  uiOutput("ui_title"),
+#  img(src='flu.png', style="position: absolute; right:1%; top: 1%", width=110, height=110),
+   img(src='flu.png', style="float:right; margin: 1em", width=110, height=110),
+  uiOutput("ui_title"), 
   uiOutput("ui_appsubtitle"),
   br(),br(),
   sidebarLayout(
@@ -56,7 +58,7 @@ server <- shinyServer(function(input, output, session) {
   })
   
   output$ui_lastUpd <- renderUI({
-    div(tr["UI_LASTUPD", lang()], ": ",
+    div(tr["UI_LASTUPD", lang()],
       format(lastUpd, "%d/%m/%Y"), style="text-align:center; line-height:140%;")
   })
 
