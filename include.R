@@ -279,3 +279,39 @@ methDeathAgePlot <- function(limweek=tgtweek){
     return(bpos)
 }
 
+
+
+plotMomo <- function(y, lang="GR") {
+  minLim <- max((y-4)*100+20, min(momo$wk))
+  maxLim <- min(minLim+520, max(momo$wk))
+  gLim <- c(y*100+40, (y+1)*100+20)
+  if (gLim[2]>max(momo$wk)) gLim[2] <- max(momo$wk)
+  m <- subset(momo, wk>=minLim & wk<=maxLim)
+  par(mar=c(10,4,2,2))
+  plot(0, type="n", bty="l", ylim=c(1000,4000), xlim=c(1,nrow(m)), 
+      xaxt="n", xlab=NA,
+      ylab=c(GR="Εβδομαδιαίος αριθμός θανάτων", EN="Weekly number of deaths")[lang])
+  mtext(c(GR="Έτος - Αριθμός εβδομάδας", EN="Year - Week number")[lang], line=5, side=1)
+  polygon(x=match(c(gLim, rev(gLim)), m$wk), 
+      y=rep(c(0,10^5),each=2), col="lightgray", border=NA)
+  abline(v=which((m$wk %% 100) %in% c(20,40))[-1], lty="dotted", col="grey")
+  points(y=m$UPIb4, x=1:nrow(m), col="yellow3", type="l", lwd=2)
+  points(y=m$UPIb2, x=1:nrow(m), col="orange2", type="l", lwd=2)
+  points(y=m$Pnb, x=1:nrow(m), col="firebrick2", type="l", lwd=2)
+  points(y=m$nbc, x=1:nrow(m), col="steelblue4", type="l", lwd=2)
+  axis(1, at=which(!is.na(m$wy)), labels=m$wy[!is.na(m$wy)], las=2)
+  par(lend=1)
+  legend("bottomleft", lwd=c(15,2,2), cex=0.92,
+      xpd=NA, bty="n", inset=c(0,-0.95),
+      seg.len=4, col=c("lightgray", "firebrick2", "steelblue4"),
+      legend=
+        list(GR=c("Επιλεγμένη περίοδος", "Αναμενόμενος αριθμός θανάτων", "Παρατηρούμενος αριθμός θανάτων"),
+        EN=c("Selected period", "Expected number of deaths", "Observed number of deaths"))[[lang]])
+  legend("bottomright", lwd=2, cex=0.92,
+      xpd=NA, bty="n", inset=c(0,-0.95),
+      seg.len=4, col=c("yellow3", "orange2"),
+      legend=list(GR=c("+4 σταθερές αποκλίσεις από το αναμενόμενο", 
+          "+2 σταθερές αποκλίσεις από το αναμενόμενο"), 
+        EN=c("+4 standard deviations from expected", 
+          "+2 standard deviations from expected"))[[lang]])
+}

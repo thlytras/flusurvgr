@@ -118,6 +118,10 @@ server <- shinyServer(function(input, output, session) {
       tabPanel(tr["UI_TBTL_METH", lang()],
         plotOutput("plotMeth"),
         value="3"
+      ),
+      tabPanel(tr["UI_TBTL_MOMO", lang()],
+        plotOutput("plotMomo"),
+        value="4"
       )
     )[c(1,which(a>0)+1)]
     if (!is.null(glb$currTab) && is.na(match(glb$currTab, which(a>0)))) glb$currTab <- "0"
@@ -149,7 +153,14 @@ server <- shinyServer(function(input, output, session) {
     outputOptions(output, "plotMeth", suspendWhenHidden=FALSE)
     methDeathPlot(y, y*100+120, lang=lang(), death=FALSE)
   }, res=90)
-  
+
+  output$plotMomo <- renderPlot({
+    y <- selYear()
+    if (!avInfo[as.character(y),4]) return()
+    outputOptions(output, "plotMomo", suspendWhenHidden=FALSE)
+    plotMomo(as.integer(y), lang=lang())
+  }, res=88)
+
   
   
 })
