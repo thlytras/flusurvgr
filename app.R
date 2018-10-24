@@ -97,30 +97,39 @@ server <- shinyServer(function(input, output, session) {
   })
   
   output$ui_tabPanels <- renderUI({
-    a <- avInfo[as.character(selYear()),]
+    y <- selYear()
+    a <- avInfo[as.character(y),]
     TABS <- list(
       tabPanel(tr["UI_TBTL_OVERVIEW",lang()],
         div(HTML(tr[sprintf("UI_OVERVIEW_%s",selYear()),lang()])),
         value="0"
       ),
       tabPanel(tr["UI_TBTL_SENTINEL",lang()],
+        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SENTINEL",lang()], y, y+1, y-1, y)),
         plotOutput("plotSentinel"),
-        checkboxInput("showPanel", "Show panel", FALSE),
-#         conditionalPanel(condition = "document.getElementById('showPanel') && input.showPanel", 
-#           wellPanel("oifjdoijsdoijf")
-#         ), h3("Hi there"), p("Hi there"), br(), br(),
+        checkboxInput("showPanelSentinel", tr["UI_METHODPANEL", lang()], FALSE),
+        conditionalPanel(condition = "document.getElementById('showPanelSentinel') && input.showPanelSentinel", 
+          wellPanel(HTML(tr["METH_SENTINEL",lang()]))
+        ), br(), br(),
         value="1"
       ),
       tabPanel(tr["UI_TBTL_SWABS", lang()],
+        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SWAB",lang()], y, y+1)),
         plotOutput("plotSwabs"),
         value="2"
       ),
       tabPanel(tr["UI_TBTL_METH", lang()],
+        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SARI",lang()], y, y+1)),
         plotOutput("plotMeth"),
         value="3"
       ),
       tabPanel(tr["UI_TBTL_MOMO", lang()],
+        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_MOMO",lang()], y, y+1)),
         plotOutput("plotMomo"),
+        checkboxInput("showPanelMOMO", tr["UI_METHODPANEL", lang()], FALSE),
+        conditionalPanel(condition = "document.getElementById('showPanelMOMO') && input.showPanelMOMO", 
+          wellPanel(HTML(tr["METH_MOMO",lang()]))
+        ), br(), br(),
         value="4"
       )
     )[c(1,which(a>0)+1)]

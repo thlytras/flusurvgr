@@ -8,6 +8,8 @@ p { line-height:120%; margin-top:1em; }
 /* body {font-size: calc(12px * 1.2); } */
 body {font-size: 140%; }
 
+h6 { font-weight: 500; }
+
 /*
 .nav-tabs{
   display:inline-flex; 
