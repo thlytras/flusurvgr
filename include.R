@@ -234,32 +234,6 @@ methDeathPlot <- function(ssn, limweek, lang="GR", death=FALSE){
 
 
 
-deathPlot <- function(limweek=tgtweek){
-    swCol <- c("dodgerblue3", "sandybrown", "red3", "orangered", "lightpink3", "darkgrey")
-    suppressWarnings({
-        bylim <- max(colSums(with(subset(totDeaths, yearweek<=limweek), table(flutypef, yearweek))))
-        bylim <- ifelse(bylim<=10, 20, 10+2*(bylim-10))
-        bpos <- barplot(with(subset(totDeaths, yearweek<=limweek), table(flutypef, yearweekf)), 
-            border=NA, col=c(swCol[1:4], "darkslategrey"), 
-            axisnames=F, axes=F, ylab="Αριθμός κρουσμάτων", font.lab=2, cex.lab=0.9,
-            ylim=c(0, bylim))
-    })
-    abline(h=seq(0,bylim,2), col="lightgrey", lwd=0.5)
-    abline(h=0)
-    bpos <- barplot(with(subset(totDeaths, yearweek<=limweek), table(flutypef, yearweekf)), border=NA, col=c(swCol[1:4], "darkslategrey"), 
-      legend.text=TRUE, ylim=c(0,bylim), axisnames=F, axes=F, font.lab=2, add=TRUE,
-      args.legend=list(bty="o", box.col="white", bg="white", border=NA, cex=0.8, x="topright", inset=c(0,-0.03)))
-    axis(1, at=bpos[seq(1,length(bpos),2)], labels=(weekSel %% 100)[seq(1,length(bpos),2)], 
-	lwd=0, cex.axis=0.8, line=-1)
-    axis(1, at=bpos[seq(2,length(bpos),2)], labels=(weekSel %% 100)[seq(2,length(bpos),2)], 
-	lwd=0, cex.axis=0.8, line=-1)
-    axis(2, las=2, cex.axis=0.9) # axis(2, at=seq(0,bylim,2), las=2, cex.axis=0.9)
-    mtext("Εβδομάδα θανάτου", side=1, cex=0.9, font=2, line=1.5)
-    return()
-}
-
-
-
 methDeathAgePlot <- function(limweek=tgtweek){
     a <- cbind("Εισαγωγές σε ΜΕΘ"=table(cut(subset(meth, yearweek<=limweek)$age, breaks=seq(0,100,10), right=FALSE, labels=paste(seq(0,90,10), seq(9,99,10), sep="-"))),
 	"Θάνατοι"=table(cut(subset(totDeaths, yearweek<=limweek)$age, breaks=seq(0,100,10), right=FALSE, labels=paste(seq(0,90,10), seq(9,99,10), sep="-"))))
@@ -314,4 +288,66 @@ plotMomo <- function(y, lang="GR") {
           "+2 σταθερές αποκλίσεις από το αναμενόμενο"), 
         EN=c("+4 standard deviations from expected", 
           "+2 standard deviations from expected"))[[lang]])
+}
+
+
+
+
+sentinel_graph_download <- function(years)
+{
+  ratechart <- resAll$gri; names(ratechart) <- resAll$yearweek
+  ratechart_logsd <- resAll$log.gri.sd; names(ratechart_logsd) <- resAll$yearweek
+  maxwk <- ifelse(sum(as.integer(isoweek(as.Date(paste(years,"-12-31",sep="")))==53))>0, 53, 52)
+  set <- sapply(years, function(x){ratechart[as.character(c((x*100+40):(x*100+maxwk),((x+1)*100+1):((x+1)*100+20)))]})
+  set_logsd <- sapply(years, function(x){ratechart_logsd[as.character(c((x*100+40):(x*100+maxwk),((x+1)*100+1):((x+1)*100+20)))]})
+  res <- as.data.frame.matrix(do.call(cbind, lapply(1:length(years), function(i) {
+    res <- round(cbind(set[,i], exp(log(set[,i]) - 1.96*set_logsd[,i]), exp(log(set[,i]) + 1.96*set_logsd[,i])),2)
+    colnames(res) <- paste0(years, c("", ".lo", ".hi"))
+    res
+  })))
+  rownames(res)[is.na(rownames(res))] <- 53
+  rownames(res) <- sprintf("%02d", as.integer(rownames(res)) %% 100)
+  res
+}
+
+swabPlot_download <- function(season, limweek, sel="all"){
+    if (sel=="sent") {
+      allSwabs <- datLabSent[datLabSent$season==season,2:10]
+    } else if (sel=="hosp") {
+      allSwabs <- datLabHosp[datLabHosp$season==season,2:10]
+    } else {
+      allSwabs <- datLabAll[datLabAll$season==season,2:10]
+    }
+    maxwk <- ifelse(sum(as.integer(isoweek(as.Date(paste(season,"-12-31",sep="")))==53))>0, 53, 52)
+    weekSel <- c(season*100+40:maxwk, (season+1)*100+1:20)
+    allSwabs[-(1:match(limweek, weekSel)),] <- 0
+    rownames(allSwabs) <- weekSel
+    allSwabs
+}
+
+
+
+methDeathPlot_download <- function(ssn, limweek, death=FALSE){
+    maxwk <- ifelse(sum(as.integer(isoweek(as.Date(paste(ssn,"-12-31",sep="")))==53))>0, 53, 52)
+    weekSel <- c(ssn*100+40:maxwk, (ssn+1)*100+1:20)
+    swCol <- c("dodgerblue3", "sandybrown", "red3", "orangered", "lightpink3", "darkgrey")
+    if (death) {
+      d <- subset(datICU, outcome=="death" & season==ssn & yearweek<=limweek)
+    } else {
+      d <- subset(datICU, typ=="m" & season==ssn & yearweek<=limweek)
+    }
+    d$yearweekf <- factor(d$yearweek, levels=weekSel)
+    d$flutypef <- factor(d$flutype, levels=rev(c("A", "A(H1N1)pdm09", "A(H3N2)", "B")))
+    d <- with(d, as.data.frame.matrix(t(table(flutypef, yearweekf))))
+    d
+}
+
+
+plotMomo_download <- function(y) {
+  minLim <- max((y-4)*100+20, min(momo$wk))
+  maxLim <- min(minLim+520, max(momo$wk))
+  gLim <- c(y*100+40, (y+1)*100+20)
+  if (gLim[2]>max(momo$wk)) gLim[2] <- max(momo$wk)
+  m <- subset(momo, wk>=minLim & wk<=maxLim)[,4:8]
+  m
 }

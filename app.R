@@ -1,4 +1,5 @@
 library(shiny)
+library(WriteXLS)
 load("fluData.RData")
 load("data_translations.RData")
 source("include.R")
@@ -107,6 +108,7 @@ server <- shinyServer(function(input, output, session) {
       tabPanel(tr["UI_TBTL_SENTINEL",lang()],
         h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SENTINEL",lang()], y, y+1, y-1, y)),
         plotOutput("plotSentinel"),
+        downloadButton("downloadSentinel", tr["UI_DOWNLOADBUTTON",lang()]),
         checkboxInput("showPanelSentinel", tr["UI_METHODPANEL", lang()], FALSE),
         conditionalPanel(condition = "document.getElementById('showPanelSentinel') && input.showPanelSentinel", 
           wellPanel(HTML(tr["METH_SENTINEL",lang()]))
@@ -116,16 +118,21 @@ server <- shinyServer(function(input, output, session) {
       tabPanel(tr["UI_TBTL_SWABS", lang()],
         h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SWAB",lang()], y, y+1)),
         plotOutput("plotSwabs"),
+        downloadButton("downloadSwabs", tr["UI_DOWNLOADBUTTON",lang()]),
+        br(), br(),
         value="2"
       ),
       tabPanel(tr["UI_TBTL_METH", lang()],
         h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SARI",lang()], y, y+1)),
         plotOutput("plotMeth"),
+        downloadButton("downloadMeth", tr["UI_DOWNLOADBUTTON",lang()]),
+        br(), br(),
         value="3"
       ),
       tabPanel(tr["UI_TBTL_MOMO", lang()],
         h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_MOMO",lang()], y, y+1)),
         plotOutput("plotMomo"),
+        downloadButton("downloadMOMO", tr["UI_DOWNLOADBUTTON",lang()]),
         checkboxInput("showPanelMOMO", tr["UI_METHODPANEL", lang()], FALSE),
         conditionalPanel(condition = "document.getElementById('showPanelMOMO') && input.showPanelMOMO", 
           wellPanel(HTML(tr["METH_MOMO",lang()]))
@@ -170,7 +177,59 @@ server <- shinyServer(function(input, output, session) {
     plotMomo(as.integer(y), lang=lang())
   }, res=88)
 
-  
+
+  output$downloadSentinel <- downloadHandler(
+    filename = function() { 
+      y <- selYear()
+      sprintf("sentinel_%s-%s.xls", y-1, y)
+    },
+    content = function(file) {
+      y <- selYear()
+      out <- sentinel_graph_download(y-(1:0))
+      sheetname <- sprintf("sentinel %s-%s", y-1, y)
+      WriteXLS("out", file, sheetname, row.names=TRUE)
+    }
+  )
+
+  output$downloadSwabs <- downloadHandler(
+    filename = function() { 
+      y <- selYear()
+      sprintf("swabs_%s.xls", y)
+    },
+    content = function(file) {
+      y <- selYear()
+      out <- swabPlot_download(y, y*100+120)
+      sheetname <- sprintf("swabs %s", y)
+      WriteXLS("out", file, sheetname, row.names=TRUE)
+    }
+  )
+
+  output$downloadMeth <- downloadHandler(
+    filename = function() { 
+      y <- selYear()
+      sprintf("meth_%s.xls", y)
+    },
+    content = function(file) {
+      y <- selYear()
+      out <- methDeathPlot_download(y, y*100+120, death=FALSE)
+      sheetname <- sprintf("meth %s", y)
+      WriteXLS("out", file, sheetname, row.names=TRUE)
+    }
+  )
+
+  output$downloadMOMO <- downloadHandler(
+    filename = function() { 
+      y <- selYear()
+      sprintf("momo_%s.xls", y)
+    },
+    content = function(file) {
+      y <- selYear()
+      out <- plotMomo_download(as.integer(y))
+      sheetname <- sprintf("momo %s", y)
+      WriteXLS("out", file, sheetname)
+    }
+  )
+
   
 })
 
