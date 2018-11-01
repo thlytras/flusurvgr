@@ -66,8 +66,6 @@ server <- shinyServer(function(input, output, session) {
   # *** Language selector ***
   
   output$ui_lang <- renderUI({
-#     radioButtons("lang", tr["UI_LANG", lang()], choiceValues=c("GR", "EN"), selected=lang(),
-#                  choiceNames=list("Ελληνικά", "English"))
       tags$div(HTML(sprintf("<div id=\"lang\" class=\"form-group shiny-input-radiogroup shiny-input-container\">\n  <label class=\"control-label\" for=\"lang\">%s</label>\n  <div class=\"shiny-options-group\">\n    <div class=\"radio\">\n      <label>\n        <input type=\"radio\" name=\"lang\" value=\"GR\"%s/>\n        <span><img src=\"flag_GR.png\"/> Ελληνικά</span>\n      </label>\n    </div>\n    <div class=\"radio\">\n      <label>\n        <input type=\"radio\" name=\"lang\" value=\"EN\"%s/>\n        <span><img src=\"flag_GB.png\"/> English</span>\n      </label>\n    </div>\n  </div>\n</div>", tr["UI_LANG", lang()], ifelse(lang()=="GR", " checked=\"checked\"", ""), ifelse(lang()=="EN", " checked=\"checked\"", ""))))
   })
   
@@ -89,6 +87,8 @@ server <- shinyServer(function(input, output, session) {
     if (is.null(input$yearSelect)) return(as.integer(rev(rownames(avInfo))[1]))
     as.integer(input$yearSelect)
   })
+  
+  currYear <- reactive({ as.integer(rev(rownames(avInfo))[1]) == selYear() })
   
   # *** Tabs and tab switcher ***
   
@@ -124,9 +124,20 @@ server <- shinyServer(function(input, output, session) {
         value="2"
       ),
       tabPanel(tr["UI_TBTL_METH", lang()],
-        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SARI",lang()], y, y+1)),
+#        br(),
+        h5(sprintf("%s %s-%s", tr["UI_YEARSELECT",lang()], y, y+1), ifelse(currYear(), sprintf("(%s %s)", tr["UI_LIMWEEK",lang()], tr["UI_CURRWEEK",lang()]), "")),
+        div(tableOutput("methDeathTable"), style="font-size:115%; font-weight:500"),
+        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_METH",lang()], y, y+1)),
         plotOutput("plotMeth"),
         downloadButton("downloadMeth", tr["UI_DOWNLOADBUTTON",lang()]),
+        br(), br(),
+        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_LDEATH",lang()], y, y+1)),
+        plotOutput("plotLDeath"),
+        downloadButton("downloadLDeath", tr["UI_DOWNLOADBUTTON",lang()]),
+        br(), br(),
+        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_METHLDEATHAGE",lang()], y, y+1)),
+        plotOutput("plotMethLDeathAge"),
+        downloadButton("downloadMethLDeathAge", tr["UI_DOWNLOADBUTTON",lang()]),
         br(), br(),
         value="3"
       ),
@@ -164,11 +175,35 @@ server <- shinyServer(function(input, output, session) {
     swabPlot(y, y*100+120, lang=lang())
   }, res=90)
   
+  output$methDeathTable <- renderTable({
+    y <- selYear()
+    if (!avInfo[as.character(y),3]) return()
+    outputOptions(output, "plotMeth", suspendWhenHidden=FALSE)
+    res <- as.data.frame(methDeathTotals(y, y*100+120))
+    colnames(res) <- "N"
+    rownames(res) <- c(tr["LEG_METH", lang()], tr["LEG_LDEATH", lang()])
+    res
+  }, rownames=TRUE, colnames=FALSE)
+  
   output$plotMeth <- renderPlot({
     y <- selYear()
     if (!avInfo[as.character(y),3]) return()
     outputOptions(output, "plotMeth", suspendWhenHidden=FALSE)
     methDeathPlot(y, y*100+120, lang=lang(), death=FALSE)
+  }, res=90)
+
+  output$plotLDeath <- renderPlot({
+    y <- selYear()
+    if (!avInfo[as.character(y),3]) return()
+    outputOptions(output, "plotLDeath", suspendWhenHidden=FALSE)
+    methDeathPlot(y, y*100+120, lang=lang(), death=TRUE)
+  }, res=90)
+
+  output$plotMethLDeathAge <- renderPlot({
+    y <- selYear()
+    if (!avInfo[as.character(y),3]) return()
+    outputOptions(output, "plotMethLDeathAge", suspendWhenHidden=FALSE)
+    methDeathAgePlot(y, y*100+120, lang=lang())
   }, res=90)
 
   output$plotMomo <- renderPlot({
@@ -199,7 +234,7 @@ server <- shinyServer(function(input, output, session) {
     },
     content = function(file) {
       y <- selYear()
-      out <- swabPlot_download(y, y*100+120)
+      out <- swabPlot(y, y*100+120, plot=FALSE)
       sheetname <- sprintf("swabs %s", y)
       WriteXLS("out", file, sheetname, row.names=TRUE)
     }
@@ -212,8 +247,34 @@ server <- shinyServer(function(input, output, session) {
     },
     content = function(file) {
       y <- selYear()
-      out <- methDeathPlot_download(y, y*100+120, death=FALSE)
+      out <- methDeathPlot(y, y*100+120, death=FALSE, plot=FALSE)
       sheetname <- sprintf("meth %s", y)
+      WriteXLS("out", file, sheetname, row.names=TRUE)
+    }
+  )
+
+  output$downloadLDeath <- downloadHandler(
+    filename = function() { 
+      y <- selYear()
+      sprintf("ldeath_%s.xls", y)
+    },
+    content = function(file) {
+      y <- selYear()
+      out <- methDeathPlot(y, y*100+120, death=TRUE, plot=FALSE)
+      sheetname <- sprintf("meth %s", y)
+      WriteXLS("out", file, sheetname, row.names=TRUE)
+    }
+  )
+
+  output$downloadMethLDeathAge <- downloadHandler(
+    filename = function() { 
+      y <- selYear()
+      sprintf("methLDeathAge_%s.xls", y)
+    },
+    content = function(file) {
+      y <- selYear()
+      out <- methDeathAgePlot(y, y*100+120, plot=FALSE)
+      sheetname <- sprintf("methLDeathAge %s", y)
       WriteXLS("out", file, sheetname, row.names=TRUE)
     }
   )
@@ -225,7 +286,7 @@ server <- shinyServer(function(input, output, session) {
     },
     content = function(file) {
       y <- selYear()
-      out <- plotMomo_download(as.integer(y))
+      out <- plotMomo(as.integer(y), plot=FALSE)
       sheetname <- sprintf("momo %s", y)
       WriteXLS("out", file, sheetname)
     }

@@ -163,8 +163,7 @@ sentinel_graph <- function(years, col=rainbow(length(years)),
 }
 
 
-
-swabPlot <- function(season, limweek, sel="all", ymax=NA, lang="GR"){
+swabPlot <- function(season, limweek, sel="all", ymax=NA, lang="GR", plot=TRUE){
     if (sel=="sent") {
       allSwabs <- datLabSent[datLabSent$season==season,2:10]
     } else if (sel=="hosp") {
@@ -175,6 +174,10 @@ swabPlot <- function(season, limweek, sel="all", ymax=NA, lang="GR"){
     maxwk <- ifelse(sum(as.integer(isoweek(as.Date(paste(season,"-12-31",sep="")))==53))>0, 53, 52)
     weekSel <- c(season*100+40:maxwk, (season+1)*100+1:20)
     allSwabs[-(1:match(limweek, weekSel)),] <- 0
+    if (!plot) {
+      rownames(allSwabs) <- weekSel
+      return(allSwabs)
+    }
     if (is.na(ymax)) ymax <- max(allSwabs[,1])+20
     ymax <- ceiling(ymax/20)*20
     swCol <- c("dodgerblue3", "sandybrown", "red3", "orangered", "lightpink3", "darkgrey")
@@ -201,8 +204,7 @@ swabPlot <- function(season, limweek, sel="all", ymax=NA, lang="GR"){
 }
 
 
-
-methDeathPlot <- function(ssn, limweek, lang="GR", death=FALSE){
+methDeathPlot <- function(ssn, limweek, lang="GR", death=FALSE, plot=TRUE){
     maxwk <- ifelse(sum(as.integer(isoweek(as.Date(paste(ssn,"-12-31",sep="")))==53))>0, 53, 52)
     weekSel <- c(ssn*100+40:maxwk, (ssn+1)*100+1:20)
     swCol <- c("dodgerblue3", "sandybrown", "red3", "orangered", "lightpink3", "darkgrey")
@@ -213,6 +215,10 @@ methDeathPlot <- function(ssn, limweek, lang="GR", death=FALSE){
     }
     d$yearweekf <- factor(d$yearweek, levels=weekSel)
     d$flutypef <- factor(d$flutype, levels=rev(c("A", "A(H1N1)pdm09", "A(H3N2)", "B")))
+    if (!plot) {
+      d <- with(d, as.data.frame.matrix(t(table(flutypef, yearweekf))))
+      d
+    }
     ymax <- ceiling(max(with(d, table(flutypef, yearweekf)))*1.3/10)*10
     if (ymax==0) ymax <- 40
     bpos <- barplot(with(d, table(flutypef, yearweekf)), border=NA, ylim=c(0,ymax),
@@ -234,33 +240,47 @@ methDeathPlot <- function(ssn, limweek, lang="GR", death=FALSE){
 
 
 
-methDeathAgePlot <- function(limweek=tgtweek){
-    a <- cbind("Εισαγωγές σε ΜΕΘ"=table(cut(subset(meth, yearweek<=limweek)$age, breaks=seq(0,100,10), right=FALSE, labels=paste(seq(0,90,10), seq(9,99,10), sep="-"))),
-	"Θάνατοι"=table(cut(subset(totDeaths, yearweek<=limweek)$age, breaks=seq(0,100,10), right=FALSE, labels=paste(seq(0,90,10), seq(9,99,10), sep="-"))))
-    barplot(t(a), border=NA, beside=TRUE, col=c("darkred", "darkgreen"), axisnames=F, axes=F, ylab=NA, font.lab=2, cex.lab=0.9, ylim=c(0,max(a)+6))
-    abline(h=seq(0, max(a)+6, 2), col="lightgrey", lwd=0.5)
-    abline(h=0)
-    bpos <- barplot(t(a), border=NA, beside=TRUE, col=c("darkred", "darkgreen"), axisnames=F, axes=F, ylab="Αριθμός κρουσμάτων", font.lab=2, cex.lab=0.9, ylim=c(0,max(a)+6),
-	add=TRUE, legend.text=TRUE, args.legend=list(bty="o", box.col="white", bg="white", border=NA, cex=0.8, x="topright", inset=c(0,-0.03)))
-    axis(2, las=2, cex.axis=0.9) # axis(2, at=seq(0, max(a)+6, 2), las=2, cex.axis=0.9)
-
-    axis(1, at=apply(bpos, 2, mean)[seq(1,ncol(bpos),2)], labels=rownames(a)[seq(1,ncol(bpos),2)], 
-	lwd=0, cex.axis=0.8, line=-1)
-    axis(1, at=apply(bpos, 2, mean)[seq(2,ncol(bpos),2)], labels=rownames(a)[seq(2,ncol(bpos),2)], 
-	lwd=0, cex.axis=0.8, line=-1)
-
-    mtext("Ηλικιακή ομάδα", side=1, cex=0.9, font=2, line=1.5)
-    return(bpos)
+methDeathAgePlot <- function(ssn, limweek, lang="EN", plot=TRUE){
+    maxwk <- ifelse(sum(as.integer(isoweek(as.Date(paste(ssn,"-12-31",sep="")))==53))>0, 53, 52)
+    weekSel <- c(ssn*100+40:maxwk, (ssn+1)*100+1:20)
+    swCol <- c("dodgerblue3", "sandybrown", "red3", "orangered", "lightpink3", "darkgrey")
+    d <- subset(datICU, season==ssn & yearweek<=limweek)
+    a <- cbind("Εισαγωγές σε ΜΕΘ"=table(cut(subset(d, typ="m")$age, breaks=seq(0,100,10), right=FALSE, labels=paste(seq(0,90,10), seq(9,99,10), sep="-"))),
+	"Θάνατοι"=table(cut(subset(d, outcome=="death")$age, breaks=seq(0,100,10), right=FALSE, labels=paste(seq(0,90,10), seq(9,99,10), sep="-"))))
+    if (lang!="GR") { colnames(a) <- c("ICU hospitalizations", "Deaths") }
+    if (plot==TRUE) {
+      bpos <- barplot(t(a), border=NA, beside=TRUE, col=c("darkred", "darkgreen"), axisnames=F, axes=F, ylab=c(GR="Αριθμός κρουσμάτων", EN="Number of cases")[lang], font.lab=2, cex.lab=0.9, ylim=c(0,max(a)+6),
+          legend.text=TRUE, args.legend=list(bty="o", box.col="white", bg="white", border=NA, cex=0.8, x="topright", inset=c(0,-0.03)))
+      axis(2, las=2, cex.axis=0.9) # axis(2, at=seq(0, max(a)+6, 2), las=2, cex.axis=0.9)
+      axis(1, at=apply(bpos, 2, mean)[seq(1,ncol(bpos),2)], labels=rownames(a)[seq(1,ncol(bpos),2)], 
+          lwd=0, cex.axis=0.8, line=-1)
+      axis(1, at=apply(bpos, 2, mean)[seq(2,ncol(bpos),2)], labels=rownames(a)[seq(2,ncol(bpos),2)], 
+          lwd=0, cex.axis=0.8, line=-1)
+      mtext(c(GR="Ηλικιακή ομάδα", EN="Age group")[lang], side=1, cex=0.9, font=2, line=1.5)
+      return(bpos)
+    } else {
+      a <- as.data.frame.matrix(a)
+      return(a)
+    }
 }
 
 
+methDeathTotals <- function(ssn, limweek){
+    d <- subset(datICU, season==ssn & yearweek<=limweek)
+    with(d, c(sum(typ=="m", na.rm=TRUE), sum(outcome=="death", na.rm=TRUE)))
+}
 
-plotMomo <- function(y, lang="GR") {
+
+plotMomo <- function(y, lang="GR", plot=TRUE) {
   minLim <- max((y-4)*100+20, min(momo$wk))
   maxLim <- min(minLim+520, max(momo$wk))
   gLim <- c(y*100+40, (y+1)*100+20)
   if (gLim[2]>max(momo$wk)) gLim[2] <- max(momo$wk)
   m <- subset(momo, wk>=minLim & wk<=maxLim)
+  if (!plot) {
+    m <- m[,4:8]
+    return(m)
+  }
   par(mar=c(10,4,2,2))
   plot(0, type="n", bty="l", ylim=c(1000,4000), xlim=c(1,nrow(m)), 
       xaxt="n", xlab=NA,
@@ -310,44 +330,5 @@ sentinel_graph_download <- function(years)
   res
 }
 
-swabPlot_download <- function(season, limweek, sel="all"){
-    if (sel=="sent") {
-      allSwabs <- datLabSent[datLabSent$season==season,2:10]
-    } else if (sel=="hosp") {
-      allSwabs <- datLabHosp[datLabHosp$season==season,2:10]
-    } else {
-      allSwabs <- datLabAll[datLabAll$season==season,2:10]
-    }
-    maxwk <- ifelse(sum(as.integer(isoweek(as.Date(paste(season,"-12-31",sep="")))==53))>0, 53, 52)
-    weekSel <- c(season*100+40:maxwk, (season+1)*100+1:20)
-    allSwabs[-(1:match(limweek, weekSel)),] <- 0
-    rownames(allSwabs) <- weekSel
-    allSwabs
-}
 
 
-
-methDeathPlot_download <- function(ssn, limweek, death=FALSE){
-    maxwk <- ifelse(sum(as.integer(isoweek(as.Date(paste(ssn,"-12-31",sep="")))==53))>0, 53, 52)
-    weekSel <- c(ssn*100+40:maxwk, (ssn+1)*100+1:20)
-    swCol <- c("dodgerblue3", "sandybrown", "red3", "orangered", "lightpink3", "darkgrey")
-    if (death) {
-      d <- subset(datICU, outcome=="death" & season==ssn & yearweek<=limweek)
-    } else {
-      d <- subset(datICU, typ=="m" & season==ssn & yearweek<=limweek)
-    }
-    d$yearweekf <- factor(d$yearweek, levels=weekSel)
-    d$flutypef <- factor(d$flutype, levels=rev(c("A", "A(H1N1)pdm09", "A(H3N2)", "B")))
-    d <- with(d, as.data.frame.matrix(t(table(flutypef, yearweekf))))
-    d
-}
-
-
-plotMomo_download <- function(y) {
-  minLim <- max((y-4)*100+20, min(momo$wk))
-  maxLim <- min(minLim+520, max(momo$wk))
-  gLim <- c(y*100+40, (y+1)*100+20)
-  if (gLim[2]>max(momo$wk)) gLim[2] <- max(momo$wk)
-  m <- subset(momo, wk>=minLim & wk<=maxLim)[,4:8]
-  m
-}
