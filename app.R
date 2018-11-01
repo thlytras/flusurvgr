@@ -66,8 +66,9 @@ server <- shinyServer(function(input, output, session) {
   # *** Language selector ***
   
   output$ui_lang <- renderUI({
-    radioButtons("lang", tr["UI_LANG", lang()], 
-                 c("Ελληνικά" = "GR", "English" = "EN"), selected=lang())
+#     radioButtons("lang", tr["UI_LANG", lang()], choiceValues=c("GR", "EN"), selected=lang(),
+#                  choiceNames=list("Ελληνικά", "English"))
+      tags$div(HTML(sprintf("<div id=\"lang\" class=\"form-group shiny-input-radiogroup shiny-input-container\">\n  <label class=\"control-label\" for=\"lang\">%s</label>\n  <div class=\"shiny-options-group\">\n    <div class=\"radio\">\n      <label>\n        <input type=\"radio\" name=\"lang\" value=\"GR\"%s/>\n        <span><img src=\"flag_GR.png\"/> Ελληνικά</span>\n      </label>\n    </div>\n    <div class=\"radio\">\n      <label>\n        <input type=\"radio\" name=\"lang\" value=\"EN\"%s/>\n        <span><img src=\"flag_GB.png\"/> English</span>\n      </label>\n    </div>\n  </div>\n</div>", tr["UI_LANG", lang()], ifelse(lang()=="GR", " checked=\"checked\"", ""), ifelse(lang()=="EN", " checked=\"checked\"", ""))))
   })
   
   lang <- reactive({
