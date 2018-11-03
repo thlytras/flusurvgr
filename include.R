@@ -1,7 +1,7 @@
 load("fluData.RData")
 
 # Συνάρτηση υπολογισμού της εβδομάδας κατά ISO
-isoweek <- function(x, type="week") {
+isoweek <- function(x, type="both_num") {
   alts=c("week","year","both_text","both_num")
   if(!(type %in% alts)) stop("Unknown isoweek type requested!")
   x.date<-as.Date(x)
@@ -26,7 +26,7 @@ isoweekStart <- function(x) {
   x.weekday <- as.integer(format(x.date,"%w"))
   x.weekday[x.weekday==0]=7
   x.nearest.thu <- x.date-x.weekday+4
-  x.isoweek <- isoweek(x.nearest.thu)
+  x.isoweek <- isoweek(x.nearest.thu, "week")
   res <- x.nearest.thu + 7*(week-x.isoweek) - 3
   if (sum(isoweek(res, type="both_num") != x)>0) stop("Error specifying ISO week number")
   return(res)
@@ -217,7 +217,7 @@ methDeathPlot <- function(ssn, limweek, lang="GR", death=FALSE, plot=TRUE){
     d$flutypef <- factor(d$flutype, levels=rev(c("A", "A(H1N1)pdm09", "A(H3N2)", "B")))
     if (!plot) {
       d <- with(d, as.data.frame.matrix(t(table(flutypef, yearweekf))))
-      d
+      return(d)
     }
     ymax <- ceiling(max(with(d, table(flutypef, yearweekf)))*1.3/10)*10
     if (ymax==0) ymax <- 40
@@ -330,5 +330,23 @@ sentinel_graph_download <- function(years)
   res
 }
 
+
+wkLims <- function(x, lang="GR") {
+  months <- list(
+    GR=c("Ιανουαρίου", "Φεβρουαρίου", "Μαρτίου", "Απριλίου", "Μαϊου", "Ιουνίου", "Ιουλίου",
+      "Αυγούστου", "Σεπτεμβρίου", "Οκτωβρίου", "Νοεμβρίου", "Δεκεμβρίου"),
+    EN=c("January", "February", "March", "April", "May", "June", "July",
+      "August", "September", "October", "November", "December"))
+  x <- as.integer(unlist(strsplit(x, "/")))
+  a1 <- isoweekStart(x[2]*100+x[1])
+  a2 <- a1 + 6
+  b1 <- as.integer(format(a1, c("%d","%m","%Y")))
+  b2 <- as.integer(format(a2, c("%d","%m","%Y")))
+  b1[2] <- months[[lang]][b1[2]]
+  b2[2] <- months[[lang]][b2[2]]
+  if (b1[3]==b2[3]) b1 <- b1[1:2]
+  if (b1[2]==b2[2]) b1 <- b1[1]
+  return(paste(paste(b1, collapse=" "), paste(b2, collapse=" "), sep=" – "))
+}
 
 

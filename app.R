@@ -103,6 +103,10 @@ server <- shinyServer(function(input, output, session) {
     a <- avInfo[as.character(y),]
     TABS <- list(
       tabPanel(tr["UI_TBTL_OVERVIEW",lang()],
+        h5(sprintf(tr["UI_SUMMARYHEADER",lang()], y, y+1)),
+        if (y==as.integer(tr["UI_CURRYEAR",lang()])) {
+          h6(sprintf(tr["UI_LIMWEEK",lang()], ""), strong(tr["UI_CURRWEEK",lang()]), sprintf("(%s)", wkLims(tr["UI_CURRWEEK",lang()], lang())))
+        } else { "" },
         div(HTML(tr[sprintf("UI_OVERVIEW_%s",selYear()),lang()])),
         value="0"
       ),
@@ -124,8 +128,8 @@ server <- shinyServer(function(input, output, session) {
         value="2"
       ),
       tabPanel(tr["UI_TBTL_METH", lang()],
-#        br(),
-        h5(sprintf("%s %s-%s", tr["UI_YEARSELECT",lang()], y, y+1), ifelse(currYear(), sprintf("(%s %s)", tr["UI_LIMWEEK",lang()], tr["UI_CURRWEEK",lang()]), "")),
+        h5(sprintf("%s %s-%s", tr["UI_YEARSELECT",lang()], y, y+1), 
+          ifelse(currYear(), sprintf("(%s)", sprintf(tr["UI_LIMWEEK",lang()], tr["UI_CURRWEEK",lang()])), "")),
         div(tableOutput("methDeathTable"), style="font-size:115%; font-weight:500"),
         h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_METH",lang()], y, y+1)),
         plotOutput("plotMeth"),
