@@ -28,7 +28,6 @@ ui <- shinyUI(fluidPage(
    img(src='flu.png', style="float:right; margin: 1em", width=110, height=110),
   uiOutput("ui_title"), 
   uiOutput("ui_appsubtitle"),
-  br(),br(),
   sidebarLayout(
     sidebarPanel(
       uiOutput("ui_lang"),
@@ -55,7 +54,37 @@ server <- shinyServer(function(input, output, session) {
   })
 
   output$ui_appsubtitle <- renderUI({
-    span(tr["UI_APPSUBTITLE", lang()])
+#    span(tr["UI_APPSUBTITLE", lang()])
+# minus-circle arrow-circle-up arrow-circle-down
+    wk <- as.integer(unlist(strsplit(tr["UI_CURRWEEK", lang()],"/"))[1])
+    res <- list()
+    res[[1]] <- div(
+        div(icon("calendar", "fa-3x"), style="display:table-cell; vertical-align:middle; padding-right:1em"), 
+        div(strong(c(GR="Εβδομάδα: ", EN="Week: ")[lang()], tr["UI_CURRWEEK", lang()]), style="display:table-cell; vertical-align:middle;"),
+        style="display:inline-block; padding-right:4em", id="sb-icon-cal")
+    if (wk>20 || wk<40) {
+      ints <- tr[c("UI_W_LOW", "UI_W_MEDIUM", "UI_W_HIGH", "UI_W_VERYHIGH"), lang()][as.integer(tr["UI_CURRINTENSITY", lang()])+1]
+      trnd <- tr[c("UI_W_DECR", "UI_W_STABLE", "UI_W_INCR"), lang()][as.integer(tr["UI_CURRTREND", lang()])+2]
+      intsIcon <- c("arrow-circle-down", "minus-circle", "arrow-circle-up")[as.integer(tr["UI_CURRINTENSITY", lang()])+1]
+      trndIcon <- c("arrow-circle-down", "minus-circle", "arrow-circle-up")[as.integer(tr["UI_CURRTREND", lang()])+2]
+      veryHigh <- as.integer(tr["UI_CURRINTENSITY", lang()])==3
+      res <- c(res,
+        list(div(
+          div(strong(tr["UI_IND_INTENSITY", lang()], ": ", ints), style="display:table-cell; vertical-align:middle; padding-right:1em"), 
+          div(icon(intsIcon, "fa-3x"), 
+            if (veryHigh) icon("arrow-circle-up", "fa-3x") else NULL,
+            style="display:table-cell; vertical-align:middle"), 
+          style="display:inline-block; padding-right:3em", id="sb-icon-intensity")),
+        list(div(
+          div(strong(tr["UI_IND_TREND", lang()], ": ", trnd), style="display:table-cell; vertical-align:middle; padding-right:1em"), 
+          div(icon(trndIcon, "fa-3x"), style="display:table-cell; vertical-align:middle"), 
+          style="display:inline-block; padding-right:3em", id="sb-icon-trend"))
+      )
+    } else {
+      res <- c(res, list(div(div("Εκτός περιόδου επιτήρησης γρίπης", 
+        style="display:table-cell; vertical-align:middle;"), style="display:inline-block; padding-right:3em")))
+    }
+    do.call(div, res)
   })
   
   output$ui_lastUpd <- renderUI({
@@ -147,7 +176,7 @@ server <- shinyServer(function(input, output, session) {
       ),
       tabPanel(tr["UI_TBTL_MOMO", lang()],
         h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_MOMO",lang()], y, y+1)),
-        plotOutput("plotMomo"),
+        plotOutput("plotMomo"),br(),
         downloadButton("downloadMOMO", tr["UI_DOWNLOADBUTTON",lang()]),
         checkboxInput("showPanelMOMO", tr["UI_METHODPANEL", lang()], FALSE),
         conditionalPanel(condition = "document.getElementById('showPanelMOMO') && input.showPanelMOMO", 
