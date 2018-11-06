@@ -2,3 +2,4 @@ rsconnect/
 data_translations.RData
 deployMe.R
 fluData.RData
+.Rproj.user

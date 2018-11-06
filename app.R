@@ -81,7 +81,7 @@ server <- shinyServer(function(input, output, session) {
           style="display:inline-block; padding-right:3em", id="sb-icon-trend"))
       )
     } else {
-      res <- c(res, list(div(div("Εκτός περιόδου επιτήρησης γρίπης", 
+      res <- c(res, list(div(div(strong(tr["UI_OUTOFSEASON",lang()]), 
         style="display:table-cell; vertical-align:middle;"), style="display:inline-block; padding-right:3em")))
     }
     do.call(div, res)
@@ -136,20 +136,34 @@ server <- shinyServer(function(input, output, session) {
         if (y==as.integer(tr["UI_CURRYEAR",lang()])) {
           h6(sprintf(tr["UI_LIMWEEK",lang()], ""), strong(tr["UI_CURRWEEK",lang()]), sprintf("(%s)", wkLims(tr["UI_CURRWEEK",lang()], lang())))
         } else { "" },
-        div(HTML(tr[sprintf("UI_OVERVIEW_%s",selYear()),lang()])),
+        div(HTML(tr[sprintf("UI_OVERVIEW_%s",selYear()), lang()])),
+        if (y==as.integer(tr["UI_CURRYEAR",lang()])) {
+          if (!is.na(tr["UI_CURRWREP", lang()])) 
+            a(sprintf(tr["UI_LEG_CURRWREP", lang()], tr["UI_CURRWEEK", lang()]), href=tr["UI_CURRWREP", lang()])
+        } else { 
+          if (!is.na(tr[sprintf("UI_ANNREP_%s", selYear()), lang()])) 
+            a(sprintf(tr["UI_LEG_ANNREP", lang()], y, y+1), href=tr[sprintf("UI_ANNREP_%s", selYear()), lang()])
+        },
+        br(), br(),
         value="0"
       ),
       tabPanel(tr["UI_TBTL_SENTINEL",lang()],
-        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SENTINEL",lang()], y, y+1, y-1, y)),
-        plotOutput("plotSentinel"),
-        downloadButton("downloadSentinel", tr["UI_DOWNLOADBUTTON",lang()]),
+        h5(tr["UI_TBTL_SENTINEL",lang()]),
         checkboxInput("showPanelSentinel", tr["UI_METHODPANEL", lang()], FALSE),
         conditionalPanel(condition = "document.getElementById('showPanelSentinel') && input.showPanelSentinel", 
           wellPanel(HTML(tr["METH_SENTINEL",lang()]))
-        ), br(), br(),
+        ),        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SENTINEL",lang()], y, y+1, y-1, y)),
+        plotOutput("plotSentinel"),
+        downloadButton("downloadSentinel", tr["UI_DOWNLOADBUTTON",lang()]),
+        br(), br(),
         value="1"
       ),
       tabPanel(tr["UI_TBTL_SWABS", lang()],
+        h5(tr["UI_TBTL_SWABS",lang()]),
+        checkboxInput("showPanelSwabs", tr["UI_METHODPANEL", lang()], FALSE),
+        conditionalPanel(condition = "document.getElementById('showPanelSwabs') && input.showPanelSwabs", 
+          wellPanel(HTML(tr["METH_SWABS",lang()]))
+        ),
         h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_SWAB",lang()], y, y+1)),
         plotOutput("plotSwabs"),
         downloadButton("downloadSwabs", tr["UI_DOWNLOADBUTTON",lang()]),
@@ -157,9 +171,13 @@ server <- shinyServer(function(input, output, session) {
         value="2"
       ),
       tabPanel(tr["UI_TBTL_METH", lang()],
-        h5(sprintf("%s %s-%s", tr["UI_YEARSELECT",lang()], y, y+1), 
+        h5(sprintf("%s – %s %s-%s", tr["UI_TBTL_METH", lang()], tr["UI_YEARSELECT",lang()], y, y+1), 
           ifelse(currYear(), sprintf("(%s)", sprintf(tr["UI_LIMWEEK",lang()], tr["UI_CURRWEEK",lang()])), "")),
         div(tableOutput("methDeathTable"), style="font-size:115%; font-weight:500"),
+        checkboxInput("showPanelMeth", tr["UI_METHODPANEL", lang()], FALSE),
+        conditionalPanel(condition = "document.getElementById('showPanelMeth') && input.showPanelMeth", 
+          wellPanel(HTML(tr["METH_METH",lang()]))
+        ),
         h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_METH",lang()], y, y+1)),
         plotOutput("plotMeth"),
         downloadButton("downloadMeth", tr["UI_DOWNLOADBUTTON",lang()]),
@@ -175,17 +193,28 @@ server <- shinyServer(function(input, output, session) {
         value="3"
       ),
       tabPanel(tr["UI_TBTL_MOMO", lang()],
-        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_MOMO",lang()], y, y+1)),
-        plotOutput("plotMomo"),br(),
-        downloadButton("downloadMOMO", tr["UI_DOWNLOADBUTTON",lang()]),
+        h5(tr["UI_TBTL_MOMO",lang()]),
         checkboxInput("showPanelMOMO", tr["UI_METHODPANEL", lang()], FALSE),
         conditionalPanel(condition = "document.getElementById('showPanelMOMO') && input.showPanelMOMO", 
           wellPanel(HTML(tr["METH_MOMO",lang()]))
-        ), br(), br(),
+        ),
+        h6(strong(tr["FIGTITLE_GRAPH", lang()]), sprintf(tr["FIGTITLE_MOMO",lang()], y, y+1)),
+        plotOutput("plotMomo"),br(),
+        downloadButton("downloadMOMO", tr["UI_DOWNLOADBUTTON",lang()]),
+        br(), br(),
         value="4"
+      ),
+      tabPanel(tr["UI_TBTL_GENERALINFO", lang()],
+        h5(tr["UI_TBTL_GENERALINFO",lang()]),
+        div(HTML(tr["UI_GENERALINFO1",lang()])), 
+        h6(strong(tr["UI_GENERALINFO2", lang()])),
+        img(src="pyramid.png", style="max-width:750px; height:auto"),
+        div(HTML(tr["UI_GENERALINFO3",lang()])), 
+        br(), br(),
+        value="5"
       )
-    )[c(1,which(a>0)+1)]
-    if (!is.null(glb$currTab) && is.na(match(glb$currTab, which(a>0)))) glb$currTab <- "0"
+    )[c(1,which(a>0)+1,6)]
+    if (!is.null(glb$currTab) && is.na(match(glb$currTab, c(which(a>0),"5")))) glb$currTab <- "0"
     TABS <- c(TABS, id="tabset", selected=glb$currTab)
     do.call(tabsetPanel, TABS)
   })
