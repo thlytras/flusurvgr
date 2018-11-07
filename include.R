@@ -322,7 +322,7 @@ sentinel_graph_download <- function(years)
   set_logsd <- sapply(years, function(x){ratechart_logsd[as.character(c((x*100+40):(x*100+maxwk),((x+1)*100+1):((x+1)*100+20)))]})
   res <- as.data.frame.matrix(do.call(cbind, lapply(1:length(years), function(i) {
     res <- round(cbind(set[,i], exp(log(set[,i]) - 1.96*set_logsd[,i]), exp(log(set[,i]) + 1.96*set_logsd[,i])),2)
-    colnames(res) <- paste0(years, c("", ".lo", ".hi"))
+    colnames(res) <- paste0(years[i], c("", ".lo", ".hi"))
     res
   })))
   rownames(res)[is.na(rownames(res))] <- 53
