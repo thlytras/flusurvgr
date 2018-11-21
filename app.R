@@ -208,7 +208,7 @@ server <- shinyServer(function(input, output, session) {
         h5(tr["UI_TBTL_GENERALINFO",lang()]),
         div(HTML(tr["UI_GENERALINFO1",lang()])), 
         h6(strong(tr["UI_GENERALINFO2", lang()])),
-        img(src="pyramid.png", style="max-width:750px; height:auto"),
+        img(src="pyramid.png", style="max-width:600px; height:auto"),
         div(HTML(tr["UI_GENERALINFO3",lang()])), 
         br(), br(),
         value="5"
